@@ -61,6 +61,8 @@ services:
     depends_on:
       - "mysqldb"
     environment:
+      TRANSACOES_HOST: transacoes
+      TRANSACOES_PORT: 7777
       DB_USER: root
       DB_PASSWORD: root
       DB_URL: jdbc:mysql://mysqldb:3306/transaction?createDatabaseIfNotExist=true
