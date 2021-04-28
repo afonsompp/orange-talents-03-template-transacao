@@ -61,6 +61,10 @@ services:
     depends_on:
       - "mysqldb"
     environment:
+      KAFKA_TRANSACTION_TOPIC: transacoes
+      KAFKA_HOST: kafka
+      KAFKA_PORT: 29092
+      KAFKA_GROUP_ID: transacoes
       TRANSACOES_HOST: transacoes
       TRANSACOES_PORT: 7777
       DB_USER: root
