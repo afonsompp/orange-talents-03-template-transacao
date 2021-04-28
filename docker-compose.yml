@@ -1,0 +1,74 @@
+version: '3'
+services:
+  zookeeper:
+    image: "confluentinc/cp-zookeeper:5.2.1"
+    networks:
+      - transaction-network
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_SYNC_LIMIT: 2
+
+  kafka:
+    image: "confluentinc/cp-kafka:5.2.1"
+    networks:
+      - transaction-network
+    ports:
+      - 9092:9092
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+  mysqldb:
+    image: mysql:8.0.23
+    ports:
+      - "3050:3306"
+    volumes:
+      - mysql-volume:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=transaction
+    networks:
+      - transaction-network
+
+  transacoes:
+    image: 'zupacademy/transacoes'
+    networks:
+      - transaction-network
+    ports:
+      - 7777:7777
+    depends_on:
+      - kafka
+    environment:
+      SERVER_PORT: 7777
+      LOG_LEVEL: INFO
+      KAFKA_HOST: "kafka:29092"
+
+  transaction:
+    build: .
+    image: afonsompp/transaction
+    container_name: transaction
+    networks:
+      - transaction-network
+    ports:
+      - "8081:8080"
+    depends_on:
+      - "mysqldb"
+    environment:
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_URL: jdbc:mysql://mysqldb:3306/transaction?createDatabaseIfNotExist=true
+      ACTIVE_PROFILE: docker
+
+volumes:
+  mysql-volume:
+
+networks:
+  transaction-network:
+    driver: bridge
