@@ -1,5 +1,27 @@
 version: '3'
 services:
+  keycloak:
+    image: jboss/keycloak
+    networks:
+      - transaction-network
+    ports:
+      - 18443:8443
+      - 18080:8080
+      - 19990:9990
+    depends_on:
+      - mysqldb
+    environment:
+      DB_VENDOR: mysql
+      DB_ADDR: mysqldb
+      DB_PORT: 3306
+      DB_DATABASE: keycloak?createDatabaseIfNotExist=true
+      DB_USER: root
+      DB_PASSWORD: root
+      KEYCLOAK_USER: admin
+      KEYCLOAK_PASSWORD: Pa55w0rd
+      KEYCLOAK_FRONTEND_URL: http://keycloak:8080/auth
+      POSTGRES_PORT_5432_TCP_ADDR: 127.0.0.1
+
   zookeeper:
     image: "confluentinc/cp-zookeeper:5.2.1"
     networks:
@@ -59,7 +81,8 @@ services:
     ports:
       - "8081:8080"
     depends_on:
-      - "mysqldb"
+      - mysqldb
+      - keycloak
     environment:
       KAFKA_TRANSACTION_TOPIC: transacoes
       KAFKA_HOST: kafka
@@ -67,6 +90,7 @@ services:
       KAFKA_GROUP_ID: transacoes
       TRANSACOES_HOST: transacoes
       TRANSACOES_PORT: 7777
+      KEYCLOACK_URL: http://keycloak:8080/auth
       DB_USER: root
       DB_PASSWORD: root
       DB_URL: jdbc:mysql://mysqldb:3306/transaction?createDatabaseIfNotExist=true
